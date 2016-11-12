@@ -18,10 +18,10 @@ plugins {
 }
 
 group = 'org.ros2.rcljava'
-version = '0.2.0'
+version = '0.3.0'
 
 apply plugin: 'maven'
-apply plugin: 'java'
+apply plugin: 'groovy'
 
 repositories {
     jcenter()
@@ -29,6 +29,7 @@ repositories {
 
 dependencies {
     compile gradleApi()
+    compile localGroovy()
 
     testCompile 'junit:junit:4.12'
 }
@@ -39,7 +40,7 @@ pluginBundle {
     description = 'Gradle plugin to build ROS2 java project with ament'
 
     plugins {
-        greetingsPlugin {
+        rcljava {
             id = 'org.ros2.rcljava'
             displayName = 'Gradle ROS2 ament rcljava plugin'
             tags = ['plugin', 'ament', 'rcljava']
