@@ -59,15 +59,9 @@ import com.google.common.io.Files
  */
 class RclJavaPlugin implements Plugin<Project> {
 
-    def String PROPERTY_SOURCE_COMPATIBILITY = "sourceCompatibility"
-    def String PROPERTY_TARGET_COMPATIBILITY = "targetCompatibility"
-
-    def String PROPERTY_SOURCE_SETS = "sourceSets"
-    def String PROPERTY_ARCHIVES_BASENAME = "archivesBaseName"
-
-    def String PROPERTY_AMENT_DEPENDENCIES = "ament.dependencies"
-    def String PROPERTY_AMENT_BUILDSPACE = "ament.build_space"
-    def String PROPERTY_AMENT_INSTALLSPACE = "ament.install_space"
+    private String PROPERTY_AMENT_DEPENDENCIES = "ament.dependencies"
+    private String PROPERTY_AMENT_BUILDSPACE = "ament.build_space"
+    private String PROPERTY_AMENT_INSTALLSPACE = "ament.install_space"
 
     private RclJavaPluginExtension extension
 
@@ -84,7 +78,7 @@ class RclJavaPlugin implements Plugin<Project> {
         }
     }
 
-    void afterEvaluate(final Project project) {
+    private void afterEvaluate(final Project project) {
         this.extension = this.loadExtension(project)
 
         //Set java properties
@@ -122,7 +116,7 @@ class RclJavaPlugin implements Plugin<Project> {
      * Update java compule properties.
      * Update source and target compatibilty.
      **/
-    void updateJavaProperties(Project project) {
+    private void updateJavaProperties(Project project) {
         if (project.sourceCompatibility < JavaVersion.VERSION_1_6) {
             project.sourceCompatibility = JavaVersion.VERSION_1_6
         }
@@ -136,7 +130,7 @@ class RclJavaPlugin implements Plugin<Project> {
      * Update project dependencies.
      * Add jar dependencies from ament configuration.
      **/
-    void updateDependencies(Project project, String configuration, String folder) {
+    private void updateDependencies(Project project, String configuration, String folder) {
         if (project.ament.dependencies != null) {
             project.dependencies {
                 project.ament.dependencies.split(':').each {
@@ -149,7 +143,7 @@ class RclJavaPlugin implements Plugin<Project> {
     /**
      * Change compiled sources output.
      **/
-    void updateSourceSetOutput(Project project) {
+    private void updateSourceSetOutput(Project project) {
         if (project.ament.buildSpace != null) {
             project.plugins.withType(JavaPlugin) {
                 project.sourceSets {
@@ -170,7 +164,7 @@ class RclJavaPlugin implements Plugin<Project> {
     /**
      * Pre-assemble files.
      **/
-    void configurePrepareAssemble(Project project) {
+    private void configurePrepareAssemble(Project project) {
         if (project.ament.installSpace != null) {
             def copy = project.tasks.create('prepareAssemble', Copy) {
                 from project.configurations.runtime
@@ -189,7 +183,7 @@ class RclJavaPlugin implements Plugin<Project> {
     /**
      * Install files.
      **/
-    void configureInstallFiles(Project project) {
+    private void configureInstallFiles(Project project) {
         if (project.ament.installSpace != null) {
             def sync = project.tasks.create('amentInstall', Copy) {
                 destinationDir new File(project.ament.installSpace)
@@ -210,7 +204,7 @@ class RclJavaPlugin implements Plugin<Project> {
         }
     }
 
-    void updateManifest(Project project) {
+    private void updateManifest(Project project) {
         project.tasks.withType(Jar) {
             manifest.attributes(
                 (java.util.jar.Attributes.Name.IMPLEMENTATION_TITLE.toString()) : project.archivesBaseName,
@@ -222,7 +216,7 @@ class RclJavaPlugin implements Plugin<Project> {
         }
     }
 
-    void updateTestTask(Project project) {
+    private void updateTestTask(Project project) {
         if (project.ament.installSpace != null) {
             project.tasks.withType(Test) {
                 def path = ""
@@ -241,8 +235,8 @@ class RclJavaPlugin implements Plugin<Project> {
         }
     }
 
-    void configureCreateScript(final Project project) {
-        if (this.extension.mainClasses != null) {
+    private void configureCreateScript(final Project project) {
+        if (this.extension.scripts != null) {
             for (NodeScript nodescript : this.extension.scripts) {
                 def task = project.tasks.create('createScript', CreateStartScripts) {
                     if (nodescript.applicationName != null && nodescript.applicationName.length() > 0) {
@@ -270,10 +264,8 @@ class RclJavaPlugin implements Plugin<Project> {
         }
     }
 
-    RclJavaPluginExtension loadExtension(Project project) {
+    private RclJavaPluginExtension loadExtension(Project project) {
         RclJavaPluginExtension extension = project.ament
-
-        project.getLogger().lifecycle("eclipse : " + extension.generateEclipse)
 
         if (extension == null) {
             extension = new RclJavaPluginExtension()

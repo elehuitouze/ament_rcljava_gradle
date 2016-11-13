@@ -22,7 +22,5 @@ class RclJavaPluginExtension {
     def String buildSpace = null
     def String installSpace = null
 
-    def Map<String, String> mainClasses = new HashMap<>()
-
     def boolean generateEclipse = false
 }
