@@ -258,7 +258,7 @@ class RclJavaPlugin implements Plugin<Project> {
                     windowsScript.text = windowsScript.text.replace('$APP_HOME\\lib\\', '')
                 }
 
-                project.tasks.getByPath('install').dependsOn task
+                project.tasks.getByPath('amentInstall').dependsOn task
             }
         }
     }
