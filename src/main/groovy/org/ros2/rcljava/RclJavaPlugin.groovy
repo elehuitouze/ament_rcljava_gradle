@@ -185,7 +185,7 @@ class RclJavaPlugin implements Plugin<Project> {
      **/
     private void configureInstallFiles(Project project) {
         if (project.ament.installSpace != null) {
-            def sync = project.tasks.create('amentInstall', Copy) {
+            def install = project.tasks.create('amentInstall', Copy) {
                 destinationDir new File(project.ament.installSpace)
 
                 into("share" + File.separator + project.name + File.separator + "java") {
@@ -197,10 +197,9 @@ class RclJavaPlugin implements Plugin<Project> {
                 }
             }
 
-            sync.group = 'ament'
-            sync.description = 'Copy files to ament install folder'
-            sync.dependsOn 'jar'
-            project.tasks.getByPath('install').dependsOn sync
+            install.group = 'ament'
+            install.description = 'Copy files to ament install folder'
+            install.dependsOn 'jar'
         }
     }
 
@@ -259,7 +258,7 @@ class RclJavaPlugin implements Plugin<Project> {
                     windowsScript.text = windowsScript.text.replace('$APP_HOME\\lib\\', '')
                 }
 
-                project.tasks.getByPath('amentInstall').dependsOn task
+                project.tasks.getByPath('install').dependsOn task
             }
         }
     }
