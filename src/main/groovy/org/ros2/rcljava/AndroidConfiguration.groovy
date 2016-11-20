@@ -67,6 +67,9 @@ class AndroidConfiguration extends CommonConfiguration {
     public void configure(final Project project) {
         super.configure(project)
 
+        this.updateDependenciesCache(project)
+        this.loadDependenciesFromCache(project)
+
         this.updateDependencies(project)
         this.configureInstallFiles(project)
 
@@ -190,6 +193,39 @@ class AndroidConfiguration extends CommonConfiguration {
                 }
 
                 project.assemble.finalizedBy project.deployArtifacts
+            }
+        }
+    }
+
+    private void updateDependenciesCache(Project project) {
+        if (project.hasProperty('ament.dependencies')
+            && project.hasProperty('ament.build_space')
+            && project.hasProperty('ament.install_space')) {
+
+            def separator = System.getProperty("line.separator")
+            def properties = new File(project.projectDir, ".ament_dependencies.properties")
+
+            properties.write('ament.build_space=')
+            properties.append(project.getProperty('ament.build_space'))
+            properties.append(separator)
+            properties.append('ament.install_space=')
+            properties.append(project.getProperty('ament.install_space'))
+            properties.append(separator)
+            properties.append('ament.dependencies=')
+            properties.append(project.getProperty('ament.dependencies'))
+            properties.append(separator)
+        }
+    }
+
+    private void loadDependenciesFromCache(Project project) {
+        if (!project.hasProperty('ament.dependencies')
+            || !project.hasProperty('ament.build_space')
+            || !project.hasProperty('ament.install_space')) {
+
+            Properties props = new Properties()
+            props.load(new FileInputStream(new File(project.projectDir, ".ament_dependencies.properties")))
+            props.each { prop ->
+                project.ext.set(prop.key, prop.value)
             }
         }
     }
