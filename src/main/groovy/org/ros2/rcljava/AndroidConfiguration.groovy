@@ -222,10 +222,14 @@ class AndroidConfiguration extends CommonConfiguration {
             || !project.hasProperty('ament.build_space')
             || !project.hasProperty('ament.install_space')) {
 
-            Properties props = new Properties()
-            props.load(new FileInputStream(new File(project.projectDir, ".ament_dependencies.properties")))
-            props.each { prop ->
-                project.ext.set(prop.key, prop.value)
+            def propertiesFile = new File(project.projectDir, ".ament_dependencies.properties")
+
+            if (propertiesFile.exists()) {
+                Properties props = new Properties()
+                props.load(new FileInputStream(propertiesFile))
+                props.each { prop ->
+                    project.ext.set(prop.key, prop.value)
+                }
             }
         }
     }
