@@ -125,7 +125,7 @@ class JavaConfiguration extends CommonConfiguration {
      * Pre-assemble files.
      **/
     protected void configurePrepareAssemble(Project project) {
-        if (project.ament.installSpace != null) {
+        if (project.ament.buildSpace != null) {
             def copy = project.tasks.create('prepareAssemble', Copy) {
                 from(project.configurations.runtime) {
                     if (project.ament.dependencies != null) {
@@ -147,7 +147,7 @@ class JavaConfiguration extends CommonConfiguration {
                 }
                 from 'lib'
 
-                into new File(project.ament.installSpace, "lib" + File.separator + "java")
+                into new File(project.ament.buildSpace, "lib" + File.separator + "java")
             }
 
             copy.group = 'build'
@@ -160,9 +160,9 @@ class JavaConfiguration extends CommonConfiguration {
      * Install files.
      **/
     private void configureInstallFiles(Project project) {
-        if (project.ament.installSpace != null) {
+        if (project.ament.buildSpace != null) {
             def install = project.tasks.create('amentInstall', Copy) {
-                destinationDir new File(project.ament.installSpace)
+                destinationDir new File(project.ament.buildSpace)
 
                 into("share" + File.separator + project.name + File.separator + "java") {
                     from project.file('build/libs/')
