@@ -18,7 +18,7 @@ plugins {
 }
 
 group = 'org.ros2.rcljava'
-version = '0.3.3'
+version = '0.4.0'
 
 apply plugin: 'maven'
 apply plugin: 'groovy'
@@ -30,6 +30,9 @@ repositories {
 dependencies {
     compile gradleApi()
     compile localGroovy()
+
+    compile 'com.android.tools.build:gradle:2.2.0+'
+    runtime 'com.android.tools.build:gradle:2.2.0+'
 
     testCompile 'junit:junit:4.12'
 }
