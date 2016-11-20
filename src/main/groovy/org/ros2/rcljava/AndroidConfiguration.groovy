@@ -72,27 +72,34 @@ class AndroidConfiguration extends CommonConfiguration {
 
         //Install files
         this.configureAndroid(project)
+        this.updateAndroidSourceSet(project)
     }
 
     public void afterEvaluate(final Project project, RclJavaPluginExtension extension) {
         super.afterEvaluate(project, extension)
     }
 
+    protected void updateSourceSet(Project project) {
+
+    }
+
     /**
      * Change compiled sources output.
      **/
-    protected void updateSourceSet(Project project) {
-        /*if (project.ament.buildSpace != null) {
+    protected void updateAndroidSourceSet(Project project) {
+        if (project.hasProperty('ament.build_space')) {
             project.plugins.withType(com.android.build.gradle.AppPlugin) {
+                def buildSpaceDir = project.file(project.getProperty('ament.build_space'))
+
                 project.android {
                     sourceSets {
                         main {
-                            jniLibs.srcDirs = new File(project.ament.buildSpace, "jniLibs")
+                            jniLibs.srcDirs = [[buildSpaceDir, 'jniLibs'].join(File.separator)]
                         }
                     }
                 }
             }
-        }*/
+        }
     }
 
     private void updateDependencies(final Project project) {

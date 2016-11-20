@@ -81,7 +81,6 @@ class RclJavaPlugin implements Plugin<Project> {
         if (!this.isAndroidProject(project)) {
             configuration = new JavaConfiguration()
         } else {
-        print "Is Android project"
             configuration = new AndroidConfiguration()
         }
 
