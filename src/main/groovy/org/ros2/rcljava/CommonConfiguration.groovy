@@ -71,13 +71,6 @@ class CommonConfiguration {
 
         //Set java properties
         this.updateJavaProperties(project)
-
-        //Update dependencies
-        this.updateDependencies(project, JavaPlugin.COMPILE_CONFIGURATION_NAME, "java")
-        this.updateDependencies(project, JavaPlugin.TEST_COMPILE_CONFIGURATION_NAME, "lib")
-
-        //Update sourceSet
-        this.updateSourceSet(project)
     }
 
     /**
@@ -91,43 +84,6 @@ class CommonConfiguration {
 
         if (project.targetCompatibility < JavaVersion.VERSION_1_6) {
             project.targetCompatibility = JavaVersion.VERSION_1_6
-        }
-    }
-
-    /**
-     * Update project dependencies.
-     * Add jar dependencies from ament configuration.
-     **/
-    protected void updateDependencies(Project project, String configuration, String folder) {
-        if (project.ament.dependencies != null) {
-            project.dependencies {
-                project.ament.dependencies.split(':').each {
-                    compile project.fileTree(
-                        dir: new File(it, folder),
-                        include: '*.jar')
-                }
-            }
-        }
-    }
-
-    /**
-     * Change compiled sources output.
-     **/
-    protected void updateSourceSet(Project project) {
-        if (project.ament.buildSpace != null) {
-            project.plugins.withType(JavaPlugin) {
-                project.sourceSets {
-                    main {
-                        output.classesDir = new File(
-                            project.ament.buildSpace,
-                            "classes" + File.separator + SourceSet.MAIN_SOURCE_SET_NAME)
-
-                        output.resourcesDir = new File(
-                            project.ament.buildSpace,
-                            "resources" + File.separator + SourceSet.MAIN_SOURCE_SET_NAME)
-                    }
-                }
-            }
         }
     }
 }

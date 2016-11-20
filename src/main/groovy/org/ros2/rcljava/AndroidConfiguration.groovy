@@ -189,7 +189,7 @@ class AndroidConfiguration extends CommonConfiguration {
                     }
                 }
 
-                project.build.finalizedBy project.deployArtifacts
+                project.assemble.finalizedBy project.deployArtifacts
             }
         }
     }

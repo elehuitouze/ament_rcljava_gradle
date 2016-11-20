@@ -63,6 +63,13 @@ class JavaConfiguration extends CommonConfiguration {
     public void afterEvaluate(final Project project, RclJavaPluginExtension extension) {
         super.afterEvaluate(project, extension)
 
+        //Update dependencies
+        this.updateDependencies(project, JavaPlugin.COMPILE_CONFIGURATION_NAME, "java")
+        this.updateDependencies(project, JavaPlugin.TEST_COMPILE_CONFIGURATION_NAME, "lib")
+
+        //Update sourceSet
+        this.updateSourceSet(project)
+
         this.configurePrepareAssemble(project)
 
         //Install files
@@ -75,6 +82,43 @@ class JavaConfiguration extends CommonConfiguration {
         this.updateTestTask(project)
 
         this.configureCreateScript(project)
+    }
+
+    /**
+     * Update project dependencies.
+     * Add jar dependencies from ament configuration.
+     **/
+    private void updateDependencies(Project project, String configuration, String folder) {
+        if (project.ament.dependencies != null) {
+            project.dependencies {
+                project.ament.dependencies.split(':').each {
+                    compile project.fileTree(
+                        dir: new File(it, folder),
+                        include: '*.jar')
+                }
+            }
+        }
+    }
+
+    /**
+     * Change compiled sources output.
+     **/
+    private void updateSourceSet(Project project) {
+        if (project.ament.buildSpace != null) {
+            project.plugins.withType(JavaPlugin) {
+                project.sourceSets {
+                    main {
+                        output.classesDir = new File(
+                            project.ament.buildSpace,
+                            "classes" + File.separator + SourceSet.MAIN_SOURCE_SET_NAME)
+
+                        output.resourcesDir = new File(
+                            project.ament.buildSpace,
+                            "resources" + File.separator + SourceSet.MAIN_SOURCE_SET_NAME)
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -132,7 +176,7 @@ class JavaConfiguration extends CommonConfiguration {
             install.group = 'ament'
             install.description = 'Copy files to ament install folder'
             install.dependsOn 'jar'
-            project.build.finalizedBy install
+            project.assemble.finalizedBy install
         }
     }
 
