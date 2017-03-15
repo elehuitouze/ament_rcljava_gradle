@@ -214,7 +214,7 @@ class JavaConfiguration extends CommonConfiguration {
     private void configureCreateScript(final Project project) {
         if (this.extension.scripts != null) {
             for (NodeScript nodescript : this.extension.scripts) {
-                def task = project.tasks.create('createScript', CreateStartScripts) {
+                def task = project.tasks.create('createScript' + nodescript.name, CreateStartScripts) {
                     if (nodescript.applicationName != null && nodescript.applicationName.length() > 0) {
                         applicationName nodescript.applicationName
                     } else {

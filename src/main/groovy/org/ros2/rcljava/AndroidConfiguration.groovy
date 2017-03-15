@@ -214,13 +214,26 @@ class AndroidConfiguration extends CommonConfiguration {
             properties.append('ament.dependencies=')
             properties.append(project.getProperty('ament.dependencies'))
             properties.append(separator)
+
+            properties.append('ament.android_stl=')
+            properties.append(project.getProperty('ament.android_stl'))
+            properties.append(separator)
+            properties.append('ament.android_abi=')
+            properties.append(project.getProperty('ament.android_abi'))
+            properties.append(separator)
+            properties.append('ament.android_ndk=')
+            properties.append(project.getProperty('ament.android_ndk'))
+            properties.append(separator)
         }
     }
 
     private void loadDependenciesFromCache(Project project) {
         if (!project.hasProperty('ament.dependencies')
-            || !project.hasProperty('ament.build_space')
-            || !project.hasProperty('ament.install_space')) {
+                || !project.hasProperty('ament.build_space')
+                || !project.hasProperty('ament.install_space')
+                || !project.hasProperty('ament.android_stl')
+                || !project.hasProperty('ament.android_abi')
+                || !project.hasProperty('ament.android_ndk')) {
 
             def propertiesFile = new File(project.projectDir, ".ament_dependencies.properties")
 
