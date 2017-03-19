@@ -45,9 +45,16 @@ import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.application.tasks.CreateStartScripts
+
 import org.gradle.plugins.ide.eclipse.EclipsePlugin
 
+import org.gradle.testing.jacoco.plugins.JacocoPlugin
+import org.gradle.testing.jacoco.tasks.JacocoReport
+
+import org.kt3k.gradle.plugin.CoverallsPlugin
+
 import com.google.common.io.Files
+import com.google.common.base.Strings
 
 /**
  * Configures a Java ros2 project.
@@ -57,28 +64,31 @@ import com.google.common.io.Files
  * - regen eclipse project if needed
  *
  * @author Erwan Le Huitouze <erwan.lehuitouze@gmail.com>
+ * @author Mickael Gaillard <mick.gaillard@gmail.com>
  */
 class RclJavaPlugin implements Plugin<Project> {
 
-    private String PROPERTY_AMENT_DEPENDENCIES = "ament.dependencies"
-    private String PROPERTY_AMENT_BUILDSPACE = "ament.build_space"
-    private String PROPERTY_AMENT_INSTALLSPACE = "ament.install_space"
+    private String PROPERTY_AMENT = "ament"
+    private String PROPERTY_AMENT_DEPENDENCIES = PROPERTY_AMENT + ".dependencies"
+    private String PROPERTY_AMENT_BUILDSPACE   = PROPERTY_AMENT + ".build_space"
+    private String PROPERTY_AMENT_INSTALLSPACE = PROPERTY_AMENT + ".install_space"
 
     private RclJavaPluginExtension extension
 
     void apply(Project project) {
-        project.extensions.create("ament", RclJavaPluginExtension)
+        CommonConfiguration configuration
+
+        project.extensions.create(PROPERTY_AMENT, RclJavaPluginExtension)
         project.ament.extensions.scripts = project.container(NodeScript)
+
+        project.getPluginManager().apply(JacocoPlugin.class)
+        project.getPluginManager().apply(CoverallsPlugin.class)
 
         if (!this.isAndroidProject(project)) {
             //Extend java-plugin
             project.getPluginManager().apply(JavaPlugin.class)
             project.getPluginManager().apply(EclipsePlugin.class)
-        }
 
-        CommonConfiguration configuration
-
-        if (!this.isAndroidProject(project)) {
             configuration = new JavaConfiguration()
         } else {
             configuration = new AndroidConfiguration()
@@ -89,6 +99,19 @@ class RclJavaPlugin implements Plugin<Project> {
         project.afterEvaluate {
             this.afterEvaluate(project)
             configuration.afterEvaluate(project, this.extension)
+        }
+
+        project.tasks.withType(JacocoReport) {
+            reports {
+                xml.enabled = true // coveralls plugin depends on xml format report
+                html.enabled = true
+            }
+            finalizedBy 'coveralls'
+        }
+
+        project.tasks.withType(Test) {
+            finalizedBy 'jacocoTestReport'
+//          dependsOn 'cleanTest'
         }
     }
 
@@ -114,17 +137,17 @@ class RclJavaPlugin implements Plugin<Project> {
             extension = new RclJavaPluginExtension()
         }
 
-        if ((extension.buildSpace == null || extension.buildSpace.length() == 0)
+        if (Strings.isNullOrEmpty(extension.buildSpace)
                 && project.hasProperty(PROPERTY_AMENT_BUILDSPACE)) {
             extension.buildSpace = project.getProperties().get(PROPERTY_AMENT_BUILDSPACE)
         }
 
-        if ((extension.dependencies == null || extension.dependencies.length() == 0)
+        if (Strings.isNullOrEmpty(extension.dependencies)
                 && project.hasProperty(PROPERTY_AMENT_DEPENDENCIES)) {
             extension.dependencies = project.getProperties().get(PROPERTY_AMENT_DEPENDENCIES)
         }
 
-        if ((extension.installSpace == null || extension.installSpace.length() == 0)
+        if (Strings.isNullOrEmpty(extension.installSpace)
                 && project.hasProperty(PROPERTY_AMENT_INSTALLSPACE)) {
             extension.installSpace = project.getProperties().get(PROPERTY_AMENT_INSTALLSPACE)
         }

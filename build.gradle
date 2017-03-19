@@ -15,11 +15,13 @@
 
 plugins {
     id 'com.gradle.plugin-publish' version '0.9.6'
+    id 'com.github.kt3k.coveralls' version '2.8.1'
 }
 
 group = 'org.ros2.rcljava'
-version = '0.4.6'
+version = '0.4.7'
 
+apply plugin: 'eclipse'
 apply plugin: 'maven'
 apply plugin: 'groovy'
 
@@ -32,21 +34,24 @@ dependencies {
     compile localGroovy()
 
     compile 'com.android.tools.build:gradle:2.2.0+'
+    compile 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.8.1'
+
     runtime 'com.android.tools.build:gradle:2.2.0+'
+    runtime 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.8.1'
 
     testCompile 'junit:junit:4.12'
 }
 
 pluginBundle {
-    website = 'https://github.com/elehuitouze/ament_rcljava_gradle'
-    vcsUrl = 'https://github.com/elehuitouze/ament_rcljava_gradle'
+    website = 'https://github.com/ros2java-alfred/ament_rcljava_gradle'
+    vcsUrl = 'https://github.com/ros2java-alfred/ament_rcljava_gradle'
     description = 'Gradle plugin to build ROS2 java project with ament'
 
     plugins {
         rcljava {
             id = 'org.ros2.rcljava'
             displayName = 'Gradle ROS2 ament rcljava plugin'
-            tags = ['plugin', 'ament', 'rcljava']
+            tags = ['plugin', 'ament', 'rcljava', 'ros2']
         }
     }
 }
