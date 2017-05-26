@@ -1,6 +1,6 @@
-/* Copyright 2016 Open Source Robotics Foundation, Inc.
+/* Copyright 2016-2017 Mickael Gaillard <mick.gaillard@gmail.com>
  *
- * Licensed under the Apache License, Version 2.0 (the "License")
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -63,7 +63,13 @@ class CommonConfiguration {
     protected RclJavaPluginExtension extension
 
     public void configure(final Project project) {
+        this.loadDependenciesFromCache(project)
 
+        if (project.ament.buildSpace != null) {
+            project.buildDir = project.ament.buildSpace
+        }
+
+        this.updateDependenciesCache(project)
     }
 
     public void afterEvaluate(final Project project, RclJavaPluginExtension extension) {
@@ -84,6 +90,75 @@ class CommonConfiguration {
 
         if (project.targetCompatibility < JavaVersion.VERSION_1_6) {
             project.targetCompatibility = JavaVersion.VERSION_1_6
+        }
+    }
+
+    public void updateDependenciesCache(Project project) {
+        if (project.ament.dependencies != null
+                && project.ament.buildSpace != null
+                && project.ament.installSpace != null) {
+
+            def separator = System.getProperty("line.separator")
+            def properties = new File(project.projectDir, ".ament_dependencies.properties")
+
+            properties.write('ament.build_space=')
+            properties.append(project.ament.buildSpace)
+            properties.append(separator)
+            properties.append('ament.install_space=')
+            properties.append(project.ament.installSpace)
+            properties.append(separator)
+            properties.append('ament.dependencies=')
+            properties.append(project.ament.dependencies)
+
+            if (project.ament.androidStl != null) {
+                properties.append(separator)
+                properties.append('ament.android_stl=')
+                properties.append(project.ament.androidStl)
+            }
+
+            if (project.ament.androidAbi != null) {
+                properties.append(separator)
+                properties.append('ament.android_abi=')
+                properties.append(project.ament.androidAbi)
+            }
+
+            if (project.ament.androidNdk != null) {
+                properties.append(separator)
+                properties.append('ament.android_ndk=')
+                properties.append(project.ament.androidNdk)
+                properties.append(separator)
+            }
+        }
+    }
+
+    public void loadDependenciesFromCache(Project project) {
+        if (project.ament.dependencies == null
+                || project.ament.buildSpace == null
+                || project.ament.installSpace == null
+                || project.ament.androidStl == null
+                || project.ament.androidAbi == null
+                || project.ament.androidNdk == null) {
+            def propertiesFile = new File(project.projectDir, ".ament_dependencies.properties")
+
+            if (propertiesFile.exists()) {
+                Properties props = new Properties()
+                props.load(new FileInputStream(propertiesFile))
+                props.each { prop ->
+                    if (prop.key == 'ament.build_space') {
+                        project.ament.buildSpace = prop.value
+                    } else if (prop.key == 'ament.dependencies') {
+                        project.ament.dependencies = prop.value
+                    } else if (prop.key == 'ament.install_space') {
+                        project.ament.installSpace = prop.value
+                    } else if (prop.key == 'ament.android_stl') {
+                        project.ament.androidStl = prop.value
+                    } else if (prop.key == 'ament.android_abi') {
+                        project.ament.androidAbi = prop.value
+                    } else if (prop.key == 'ament.android_ndk') {
+                        project.ament.androidNdk = prop.value
+                    }
+                }
+            }
         }
     }
 }

@@ -1,6 +1,6 @@
-/* Copyright 2016 Open Source Robotics Foundation, Inc.
+/* Copyright 2016-2017 Mickael Gaillard <mick.gaillard@gmail.com>
  *
- * Licensed under the Apache License, Version 2.0 (the "License")
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -60,21 +60,28 @@ import com.google.common.io.Files
  */
 class RclJavaPlugin implements Plugin<Project> {
 
-    private String PROPERTY_AMENT_DEPENDENCIES = "ament.dependencies"
-    private String PROPERTY_AMENT_BUILDSPACE = "ament.build_space"
-    private String PROPERTY_AMENT_INSTALLSPACE = "ament.install_space"
-
+    private static String PROPERTY_AMENT_DEPENDENCIES = "ament.dependencies"
+    private static String PROPERTY_AMENT_BUILDSPACE = "ament.build_space"
+    private static String PROPERTY_AMENT_INSTALLSPACE = "ament.install_space"
+    
+    private static String PROPERTY_AMENT_ANDROIDABI = "ament.android_abi"
+    private static String PROPERTY_AMENT_ANDROIDNDK = "ament.android_ndk"
+    private static String PROPERTY_AMENT_ANDROIDSTL = "ament.android_stl"
+    
     private RclJavaPluginExtension extension
 
     void apply(Project project) {
         project.extensions.create("ament", RclJavaPluginExtension)
         project.ament.extensions.scripts = project.container(NodeScript)
+        project.ament.project = project
 
-        if (!this.isAndroidProject(project)) {
+        if (!this.isAndroidProject(project)) {        
             //Extend java-plugin
             project.getPluginManager().apply(JavaPlugin.class)
             project.getPluginManager().apply(EclipsePlugin.class)
         }
+
+        loadExtension(project, project.ament)
 
         CommonConfiguration configuration
 
@@ -82,18 +89,18 @@ class RclJavaPlugin implements Plugin<Project> {
             configuration = new JavaConfiguration()
         } else {
             configuration = new AndroidConfiguration()
-        }
-
-        configuration.configure(project)
+        }        
 
         project.afterEvaluate {
             this.afterEvaluate(project)
             configuration.afterEvaluate(project, this.extension)
         }
+        
+        configuration.configure(project)
     }
 
     private void afterEvaluate(final Project project) {
-        this.extension = this.loadExtension(project)
+        this.extension = loadExtension(project)
 
         if (this.extension.isGenerateEclipse()) {
             //Extend java-plugin
@@ -107,12 +114,16 @@ class RclJavaPlugin implements Plugin<Project> {
         return project.plugins.hasPlugin("com.android.application")
     }
 
-    private RclJavaPluginExtension loadExtension(Project project) {
+    public static RclJavaPluginExtension loadExtension(Project project) {
         RclJavaPluginExtension extension = project.ament
 
+        return loadExtension(project, extension)
+    }
+    
+    public static RclJavaPluginExtension loadExtension(Project project, RclJavaPluginExtension extension) {
         if (extension == null) {
             extension = new RclJavaPluginExtension()
-        }
+        }     
 
         if ((extension.buildSpace == null || extension.buildSpace.length() == 0)
                 && project.hasProperty(PROPERTY_AMENT_BUILDSPACE)) {
@@ -127,6 +138,21 @@ class RclJavaPlugin implements Plugin<Project> {
         if ((extension.installSpace == null || extension.installSpace.length() == 0)
                 && project.hasProperty(PROPERTY_AMENT_INSTALLSPACE)) {
             extension.installSpace = project.getProperties().get(PROPERTY_AMENT_INSTALLSPACE)
+        }
+        
+        if ((extension.androidAbi == null || extension.androidAbi.length() == 0)
+                && project.hasProperty(PROPERTY_AMENT_ANDROIDABI)) {
+            extension.androidAbi = project.getProperties().get(PROPERTY_AMENT_ANDROIDABI)
+        }
+        
+        if ((extension.androidNdk == null || extension.androidNdk.length() == 0)
+                && project.hasProperty(PROPERTY_AMENT_ANDROIDNDK)) {
+            extension.androidNdk = project.getProperties().get(PROPERTY_AMENT_ANDROIDNDK)
+        }
+        
+        if ((extension.androidStl == null || extension.androidStl.length() == 0)
+                && project.hasProperty(PROPERTY_AMENT_ANDROIDSTL)) {
+            extension.androidStl = project.getProperties().get(PROPERTY_AMENT_ANDROIDSTL)
         }
 
         return extension
