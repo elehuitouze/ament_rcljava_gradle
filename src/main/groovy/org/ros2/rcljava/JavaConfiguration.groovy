@@ -203,11 +203,11 @@ class JavaConfiguration extends CommonConfiguration {
                 destinationDir new File(project.ament.buildSpace)
 
                 into("share" + File.separator + project.name + File.separator + "java") {
-                    from project.file('build/libs/')
+                    from project.file("$project.buildDir/libs/")
                 }
 
                 into("bin") {
-                    from project.file('build/scripts/')
+                    from project.file("$project.buildDir/scripts/")
                 }
             }
 
