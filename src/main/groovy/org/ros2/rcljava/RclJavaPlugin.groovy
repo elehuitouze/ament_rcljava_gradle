@@ -80,8 +80,6 @@ class RclJavaPlugin implements Plugin<Project> {
     private RclJavaPluginExtension extension
 
     void apply(Project project) {
-        CommonConfiguration configuration
-
         project.extensions.create(PROPERTY_AMENT, RclJavaPluginExtension)
         project.ament.extensions.scripts = project.container(NodeScript)
         project.ament.project = project
@@ -138,7 +136,7 @@ class RclJavaPlugin implements Plugin<Project> {
     }
 
     private boolean isAndroidProject(Project project) {
-        return project.plugins.hasPlugin("com.android.application")
+        return project.plugins.hasPlugin("com.android.application") || project.plugins.hasPlugin("com.android.library")
     }
 
     public static RclJavaPluginExtension loadExtension(Project project) {

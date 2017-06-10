@@ -86,7 +86,7 @@ class AndroidConfiguration extends CommonConfiguration {
      **/
     protected void updateAndroidSourceSet(Project project) {
         if (project.ament.buildSpace != null) {
-            project.plugins.withId("com.android.application") {
+            project.plugins.withId(this.getAndroidPluginType(project)) {
                 project.android {
                     sourceSets {
                         main {
@@ -100,7 +100,7 @@ class AndroidConfiguration extends CommonConfiguration {
 
     private void updateDependencies(final Project project) {
         if (project.ament.dependencies != null) {
-            project.plugins.withId("com.android.application") {
+            project.plugins.withId(this.getAndroidPluginType(project)) {
                 project.dependencies {
                     project.ament.dependencies.split(':').each {
                         compile project.fileTree(
@@ -115,7 +115,7 @@ class AndroidConfiguration extends CommonConfiguration {
 
     private void configureAndroid(Project project) {
         if (project.ament.buildSpace != null) {
-            project.plugins.withId("com.android.application") {
+            project.plugins.withId(this.getAndroidPluginType(project)) {
                 if (project.ament.androidStl != null) {
                     //this seem not working, see https://code.google.com/p/android/issues/detail?id=214664
                     //project.android.defaultConfig.externalNativeBuild.cmake.arguments.add("-DANDROID_STL=$project.ament.androidStl")
@@ -159,7 +159,7 @@ class AndroidConfiguration extends CommonConfiguration {
      * Install files.
      **/
     private void configureInstallFiles(Project project) {
-        project.plugins.withId("com.android.application") {
+        project.plugins.withId(this.getAndroidPluginType(project)) {
             if (project.ament.buildSpace != null && project.ament.installSpace != null) {
                 //TODO this not working with android plugin 3.0.0 anymore
                 //https://developer.android.com/studio/preview/features/new-android-plugin-migration.html#variant_api
@@ -175,5 +175,11 @@ class AndroidConfiguration extends CommonConfiguration {
 //                }
             }
         }
+    }
+    
+    private String getAndroidPluginType(Project project) {
+        return project.plugins.hasPlugin("com.android.application")
+            ? "com.android.application"
+            : "com.android.library";
     }
 }
