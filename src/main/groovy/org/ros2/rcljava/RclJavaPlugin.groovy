@@ -1,6 +1,6 @@
-/* Copyright 2016 Open Source Robotics Foundation, Inc.
+/* Copyright 2016-2017 Mickael Gaillard <mick.gaillard@gmail.com>
  *
- * Licensed under the Apache License, Version 2.0 (the "License")
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -68,10 +68,14 @@ import com.google.common.base.Strings
  */
 class RclJavaPlugin implements Plugin<Project> {
 
-    private String PROPERTY_AMENT = "ament"
-    private String PROPERTY_AMENT_DEPENDENCIES = PROPERTY_AMENT + ".dependencies"
-    private String PROPERTY_AMENT_BUILDSPACE   = PROPERTY_AMENT + ".build_space"
-    private String PROPERTY_AMENT_INSTALLSPACE = PROPERTY_AMENT + ".install_space"
+    private static String PROPERTY_AMENT = "ament"
+    private static String PROPERTY_AMENT_DEPENDENCIES = PROPERTY_AMENT + ".dependencies"
+    private static String PROPERTY_AMENT_BUILDSPACE   = PROPERTY_AMENT + ".build_space"
+    private static String PROPERTY_AMENT_INSTALLSPACE = PROPERTY_AMENT + ".install_space"
+
+    private static String PROPERTY_AMENT_ANDROIDABI   = PROPERTY_AMENT + ".android_abi"
+    private static String PROPERTY_AMENT_ANDROIDNDK   = PROPERTY_AMENT + ".android_ndk"
+    private static String PROPERTY_AMENT_ANDROIDSTL   = PROPERTY_AMENT + ".android_stl"
 
     private RclJavaPluginExtension extension
 
@@ -80,6 +84,7 @@ class RclJavaPlugin implements Plugin<Project> {
 
         project.extensions.create(PROPERTY_AMENT, RclJavaPluginExtension)
         project.ament.extensions.scripts = project.container(NodeScript)
+        project.ament.project = project
 
         project.getPluginManager().apply(JacocoPlugin.class)
         project.getPluginManager().apply(CoverallsPlugin.class)
@@ -88,13 +93,17 @@ class RclJavaPlugin implements Plugin<Project> {
             //Extend java-plugin
             project.getPluginManager().apply(JavaPlugin.class)
             project.getPluginManager().apply(EclipsePlugin.class)
+        }
 
+        loadExtension(project, project.ament)
+
+        CommonConfiguration configuration
+
+        if (!this.isAndroidProject(project)) {
             configuration = new JavaConfiguration()
         } else {
             configuration = new AndroidConfiguration()
-        }
-
-        configuration.configure(project)
+        }        
 
         project.afterEvaluate {
             this.afterEvaluate(project)
@@ -113,10 +122,12 @@ class RclJavaPlugin implements Plugin<Project> {
             finalizedBy 'jacocoTestReport'
 //          dependsOn 'cleanTest'
         }
+
+        configuration.configure(project)
     }
 
     private void afterEvaluate(final Project project) {
-        this.extension = this.loadExtension(project)
+        this.extension = loadExtension(project)
 
         if (this.extension.isGenerateEclipse()) {
             //Extend java-plugin
@@ -130,12 +141,16 @@ class RclJavaPlugin implements Plugin<Project> {
         return project.plugins.hasPlugin("com.android.application")
     }
 
-    private RclJavaPluginExtension loadExtension(Project project) {
+    public static RclJavaPluginExtension loadExtension(Project project) {
         RclJavaPluginExtension extension = project.ament
 
+        return loadExtension(project, extension)
+    }
+    
+    public static RclJavaPluginExtension loadExtension(Project project, RclJavaPluginExtension extension) {
         if (extension == null) {
             extension = new RclJavaPluginExtension()
-        }
+        }     
 
         if (Strings.isNullOrEmpty(extension.buildSpace)
                 && project.hasProperty(PROPERTY_AMENT_BUILDSPACE)) {
@@ -150,6 +165,21 @@ class RclJavaPlugin implements Plugin<Project> {
         if (Strings.isNullOrEmpty(extension.installSpace)
                 && project.hasProperty(PROPERTY_AMENT_INSTALLSPACE)) {
             extension.installSpace = project.getProperties().get(PROPERTY_AMENT_INSTALLSPACE)
+        }
+        
+        if ((extension.androidAbi == null || extension.androidAbi.length() == 0)
+                && project.hasProperty(PROPERTY_AMENT_ANDROIDABI)) {
+            extension.androidAbi = project.getProperties().get(PROPERTY_AMENT_ANDROIDABI)
+        }
+        
+        if ((extension.androidNdk == null || extension.androidNdk.length() == 0)
+                && project.hasProperty(PROPERTY_AMENT_ANDROIDNDK)) {
+            extension.androidNdk = project.getProperties().get(PROPERTY_AMENT_ANDROIDNDK)
+        }
+        
+        if ((extension.androidStl == null || extension.androidStl.length() == 0)
+                && project.hasProperty(PROPERTY_AMENT_ANDROIDSTL)) {
+            extension.androidStl = project.getProperties().get(PROPERTY_AMENT_ANDROIDSTL)
         }
 
         return extension

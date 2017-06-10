@@ -1,6 +1,6 @@
-/* Copyright 2016 Open Source Robotics Foundation, Inc.
+/* Copyright 2016-2017 Mickael Gaillard <mick.gaillard@gmail.com>
  *
- * Licensed under the Apache License, Version 2.0 (the "License")
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -67,6 +67,8 @@ class JavaConfiguration extends CommonConfiguration {
         this.updateDependencies(project, JavaPlugin.COMPILE_CONFIGURATION_NAME, "java")
         this.updateDependencies(project, JavaPlugin.TEST_COMPILE_CONFIGURATION_NAME, "lib")
 
+        this.updateEclipseClasspath(project)
+
         //Update sourceSet
         this.updateSourceSet(project)
 
@@ -101,6 +103,33 @@ class JavaConfiguration extends CommonConfiguration {
     }
 
     /**
+     * Update eclipse classpath file.
+     * Add native folder to classpath.
+     */
+    private void updateEclipseClasspath(Project project) {
+        if (project.ament.isGenerateEclipse()) {
+            def nativePaths = "";
+
+            project.ament.getNativeDependencies().each { it ->
+                nativePaths += it.dir.absolutePath + "::"
+            }
+
+            if (nativePaths != "") {
+                nativePaths = nativePaths.substring(0, nativePaths.size() - 2)
+
+                project.eclipse.classpath.file.withXml { xml ->
+                    def node = xml.asNode()
+                    def container = node.find { it.@path.endsWith('rcljava.jar') }
+                    container.appendNode('attributes').appendNode('attribute', [
+                            name : 'org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY',
+                            value: "$nativePaths"])
+
+                }
+            }
+        }
+    }
+
+    /**
      * Change compiled sources output.
      **/
     private void updateSourceSet(Project project) {
@@ -115,6 +144,15 @@ class JavaConfiguration extends CommonConfiguration {
                         output.resourcesDir = new File(
                             project.ament.buildSpace,
                             "resources" + File.separator + SourceSet.MAIN_SOURCE_SET_NAME)
+                    }
+                    test {
+                        output.classesDir = new File(
+                            project.ament.buildSpace,
+                            "classes" + File.separator + SourceSet.TEST_SOURCE_SET_NAME)
+
+                        output.resourcesDir = new File(
+                            project.ament.buildSpace,
+                            "resources" + File.separator + SourceSet.TEST_SOURCE_SET_NAME)
                     }
                 }
             }
@@ -165,11 +203,11 @@ class JavaConfiguration extends CommonConfiguration {
                 destinationDir new File(project.ament.buildSpace)
 
                 into("share" + File.separator + project.name + File.separator + "java") {
-                    from project.file('build/libs/')
+                    from project.file("$project.buildDir/libs/")
                 }
 
                 into("bin") {
-                    from project.file('build/scripts/')
+                    from project.file("$project.buildDir/scripts/")
                 }
             }
 
@@ -261,7 +299,9 @@ class JavaConfiguration extends CommonConfiguration {
                     windowsScript.text = windowsScript.text.replace('$APP_HOME\\lib\\', '')
                 }
 
-                project.tasks.getByPath('amentInstall').dependsOn task
+                if (project.ament.buildSpace != null) {
+                    project.tasks.getByPath('amentInstall').dependsOn task
+                }
             }
         }
     }
