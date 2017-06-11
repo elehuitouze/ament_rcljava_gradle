@@ -102,11 +102,41 @@ class AndroidConfiguration extends CommonConfiguration {
         if (project.ament.dependencies != null) {
             project.plugins.withId(this.getAndroidPluginType(project)) {
                 project.dependencies {
-                    project.ament.dependencies.split(':').each {
-                        compile project.fileTree(
+                    compile group: 'org.slf4j', name: 'slf4j-android', version: '1.7.7'
+                }
+                
+                def aarPath = null               
+                
+                project.ament.dependencies.split(':').each {
+                    project.fileTree(
                             dir: new File(it, 'java'),
-                            include: '*.jar',
-                            excludes: ['slf4j-jdk*.jar', 'slf4j-log4j*.jar'])
+                            include: '*-release.aar').each { it2 ->
+                                aarPath = it
+                                
+                                project.repositories {
+                                    flatDir {
+                                        dirs it2.parent
+                                    }
+                                }
+                                
+                                def aarLibrary = it2.name.substring(0, it2.name.length() - 4)
+                                
+                                project.dependencies {
+                                    compile (name: "$aarLibrary", ext: 'aar')
+                                }
+                            }
+                }
+                        
+                project.dependencies {            
+                    project.ament.dependencies.split(':').each {
+                        if (aarPath == null || it == aarPath) {
+                            aarPath = null
+                            
+                            compile project.fileTree(
+                                dir: new File(it, 'java'),
+                                include: '*.jar',
+                                excludes: ['slf4j*.jar'])
+                        }
                     }
                 }
             }
@@ -163,16 +193,29 @@ class AndroidConfiguration extends CommonConfiguration {
             if (project.ament.buildSpace != null && project.ament.installSpace != null) {
                 //TODO this not working with android plugin 3.0.0 anymore
                 //https://developer.android.com/studio/preview/features/new-android-plugin-migration.html#variant_api
-//                project.android.applicationVariants.all { variant ->
-//                    variant.outputs.each { output ->
-//                        def copyArtifacts = project.task('copyArtifacts' + variant.name.capitalize(), type: Copy) {
-//                            from output.outputFile.absolutePath
-//                            into project.ament.installSpace
-//                        }
-//
-//                        assemble.finalizedBy copyArtifacts
-//                    }
-//                }
+                if (project.plugins.hasPlugin("com.android.application")) {
+                    project.android.applicationVariants.all { variant ->
+                        variant.outputs.each { output ->
+                            def copyArtifacts = project.task('copyArtifacts' + variant.name.capitalize(), type: Copy) {
+                                from output.outputFile.absolutePath
+                                into project.ament.installSpace
+                            }
+
+                            assemble.finalizedBy copyArtifacts
+                        }
+                    }
+                } else {
+                    project.android.libraryVariants.all { variant ->
+                        variant.outputs.each { output ->
+                            def copyArtifacts = project.task('copyArtifacts' + variant.name.capitalize(), type: Copy) {
+                                from output.outputFile.absolutePath
+                                into project.ament.buildSpace + File.separator + "share" + File.separator + project.name + File.separator + "java"
+                            }
+
+                            assemble.finalizedBy copyArtifacts
+                        }
+                    }
+                }
             }
         }
     }
