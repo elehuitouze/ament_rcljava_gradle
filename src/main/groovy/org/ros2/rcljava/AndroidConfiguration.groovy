@@ -14,55 +14,23 @@
  */
 package org.ros2.rcljava
 
-import java.io.File
-import java.util.ArrayList
-import java.util.Date
-import java.util.Map.Entry
-import java.util.List
-import java.util.jar.Attributes
-
-import org.gradle.api.Action
-import org.gradle.api.JavaVersion
-import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.Task
-import org.gradle.api.artifacts.Dependency
-import org.gradle.api.artifacts.DependencyResolutionListener
-import org.gradle.api.artifacts.DependencySet
-import org.gradle.api.artifacts.ResolvableDependencies
-import org.gradle.api.distribution.plugins.DistributionPlugin
-import org.gradle.api.file.ConfigurableFileTree
-import org.gradle.api.file.FileCollection
-import org.gradle.api.file.FileTree
-import org.gradle.api.file.FileVisitDetails
-import org.gradle.api.file.FileVisitor
-import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.MavenPlugin
-import org.gradle.api.tasks.SourceSet
-import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
-import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.bundling.Jar
-import org.gradle.api.tasks.compile.JavaCompile
-import org.gradle.api.tasks.testing.Test
-import org.gradle.jvm.application.tasks.CreateStartScripts
-import org.gradle.plugins.ide.eclipse.EclipsePlugin
-
-import com.google.common.io.Files
 
 /**
- * Configures a Java ros2 project.
+ * Configures an Android Java ros2 project.
  *
  * - apply java plugin to project
- * - move jar to ament install space
- * - regen eclipse project if needed
+ * - move aar to ament install space
  *
  * @author Erwan Le Huitouze <erwan.lehuitouze@gmail.com>
  */
 class AndroidConfiguration extends CommonConfiguration {
 
-    public void configure(final Project project) {
+    void configure(final Project project) {
         super.configure(project)
 
         this.updateDependencies(project)
@@ -73,12 +41,8 @@ class AndroidConfiguration extends CommonConfiguration {
         this.updateAndroidSourceSet(project)
     }
 
-    public void afterEvaluate(final Project project, RclJavaPluginExtension extension) {
+    void afterEvaluate(final Project project, RclJavaPluginExtension extension) {
         super.afterEvaluate(project, extension)
-    }
-
-    protected void updateSourceSet(Project project) {
-
     }
 
     /**
@@ -86,7 +50,7 @@ class AndroidConfiguration extends CommonConfiguration {
      **/
     protected void updateAndroidSourceSet(Project project) {
         if (project.ament.buildSpace != null) {
-            project.plugins.withId(this.getAndroidPluginType(project)) {
+            project.plugins.withId(getAndroidPluginType(project)) {
                 project.android {
                     sourceSets {
                         main {
@@ -100,42 +64,55 @@ class AndroidConfiguration extends CommonConfiguration {
 
     private void updateDependencies(final Project project) {
         if (project.ament.dependencies != null) {
-            project.plugins.withId(this.getAndroidPluginType(project)) {
+            project.plugins.withId(getAndroidPluginType(project)) {
                 project.dependencies {
                     compile group: 'org.slf4j', name: 'slf4j-android', version: '1.7.7'
                 }
                 
-                def aarPath = null               
-                
+                def aarPath = null
+
                 project.ament.dependencies.split(':').each {
-                    project.fileTree(
-                            dir: new File(it, 'java'),
-                            include: '*-release.aar').each { it2 ->
-                                aarPath = it
-                                
-                                project.repositories {
-                                    flatDir {
-                                        dirs it2.parent
-                                    }
-                                }
-                                
-                                def aarLibrary = it2.name.substring(0, it2.name.length() - 4)
-                                
-                                project.dependencies {
-                                    compile (name: "$aarLibrary", ext: 'aar')
-                                }
+                    def packagePath = new File(it)
+
+                    def mavenRepository = new File(packagePath, 'java/maven')
+
+                    if (mavenRepository.exists()) {
+                        aarPath = it
+
+                        project.repositories {
+                            maven {
+                                url { 'file://' + mavenRepository.absolutePath }
                             }
-                }
-                        
-                project.dependencies {            
-                    project.ament.dependencies.split(':').each {
-                        if (aarPath == null || it == aarPath) {
-                            aarPath = null
-                            
-                            compile project.fileTree(
-                                dir: new File(it, 'java'),
+                        }
+
+                        boolean hasAar = false
+
+                        project.fileTree(dir: mavenRepository, include: '**/*.aar').each { file ->
+                            hasAar = true;
+                        }
+
+                        def aarLibrary = packagePath.name
+                        def extension = hasAar ? 'aar' : 'jar'
+
+                        project.dependencies {
+                            compile(name: "$aarLibrary", version: '1.0.0', ext: extension) {
+                                transitive = true
+                            }
+                        }
+                    } else {
+                        def dependency = project.fileTree(
+                                dir: new File(packagePath, 'java'),
                                 include: '*.jar',
                                 excludes: ['slf4j*.jar'])
+
+                        if (isAndroidLibrary(project)) {
+                            project.dependencies {
+                                provided dependency
+                            }
+                        } else {
+                            project.dependencies {
+                                compile dependency
+                            }
                         }
                     }
                 }
@@ -145,7 +122,7 @@ class AndroidConfiguration extends CommonConfiguration {
 
     private void configureAndroid(Project project) {
         if (project.ament.buildSpace != null) {
-            project.plugins.withId(this.getAndroidPluginType(project)) {
+            project.plugins.withId(getAndroidPluginType(project)) {
                 if (project.ament.androidStl != null) {
                     //this seem not working, see https://code.google.com/p/android/issues/detail?id=214664
                     //project.android.defaultConfig.externalNativeBuild.cmake.arguments.add("-DANDROID_STL=$project.ament.androidStl")
@@ -189,7 +166,7 @@ class AndroidConfiguration extends CommonConfiguration {
      * Install files.
      **/
     private void configureInstallFiles(Project project) {
-        project.plugins.withId(this.getAndroidPluginType(project)) {
+        project.plugins.withId(getAndroidPluginType(project)) {
             if (project.ament.buildSpace != null && project.ament.installSpace != null) {
                 //TODO this not working with android plugin 3.0.0 anymore
                 //https://developer.android.com/studio/preview/features/new-android-plugin-migration.html#variant_api
@@ -205,24 +182,48 @@ class AndroidConfiguration extends CommonConfiguration {
                         }
                     }
                 } else {
-                    project.android.libraryVariants.all { variant ->
-                        variant.outputs.each { output ->
-                            def copyArtifacts = project.task('copyArtifacts' + variant.name.capitalize(), type: Copy) {
-                                from output.outputFile.absolutePath
-                                into project.ament.buildSpace + File.separator + "share" + File.separator + project.name + File.separator + "java"
-                            }
+                    project.getPluginManager().apply(MavenPlugin.class)
 
-                            assemble.finalizedBy copyArtifacts
+                    def androidSourcesJar = project.task('androidSourcesJar', type: Jar) {
+                        classifier = 'sources'
+                        from project.android.sourceSets.main.java.srcDirs
+                    }
+
+                    project.artifacts {
+                        archives androidSourcesJar
+                    }
+
+                    project.uploadArchives {
+                        repositories {
+                            mavenDeployer {
+                                repository(url: "file://export"
+                                        + File.separator + project.ament.buildSpace
+                                        + File.separator + "share"
+                                        + File.separator + project.name
+                                        + File.separator + "java"
+                                        + File.separator + "maven")
+                                pom.version = '1.0.0' //TODO set with package version
+                            }
                         }
                     }
+
+                    project.assemble.finalizedBy project.uploadArchives
                 }
             }
         }
     }
     
-    private String getAndroidPluginType(Project project) {
-        return project.plugins.hasPlugin("com.android.application")
-            ? "com.android.application"
-            : "com.android.library";
+    private static String getAndroidPluginType(Project project) {
+        def type = "com.android.application"
+
+        if (!project.plugins.hasPlugin(type)) {
+            type = "com.android.library"
+        }
+
+        return type
+    }
+
+    private static boolean isAndroidLibrary(Project project) {
+        return getAndroidPluginType(project).equals("com.android.library")
     }
 }

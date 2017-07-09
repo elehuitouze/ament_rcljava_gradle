@@ -19,7 +19,7 @@ plugins {
 }
 
 group = 'org.ros2.rcljava'
-version = '0.4.10'
+version = '0.5.0'
 
 apply plugin: 'eclipse'
 apply plugin: 'maven'

@@ -14,40 +14,8 @@
  */
 package org.ros2.rcljava
 
-import java.io.File
-import java.util.ArrayList
-import java.util.Date
-import java.util.Map.Entry
-import java.util.List
-import java.util.jar.Attributes
-
-import org.gradle.api.Action
 import org.gradle.api.JavaVersion
-import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.Task
-import org.gradle.api.artifacts.Dependency
-import org.gradle.api.artifacts.DependencyResolutionListener
-import org.gradle.api.artifacts.DependencySet
-import org.gradle.api.artifacts.ResolvableDependencies
-import org.gradle.api.distribution.plugins.DistributionPlugin
-import org.gradle.api.file.ConfigurableFileTree
-import org.gradle.api.file.FileCollection
-import org.gradle.api.file.FileTree
-import org.gradle.api.file.FileVisitDetails
-import org.gradle.api.file.FileVisitor
-import org.gradle.api.plugins.JavaPlugin
-import org.gradle.api.plugins.MavenPlugin
-import org.gradle.api.tasks.SourceSet
-import org.gradle.api.tasks.SourceSetContainer
-import org.gradle.api.tasks.Copy
-import org.gradle.api.tasks.Sync
-import org.gradle.api.tasks.bundling.Jar
-import org.gradle.api.tasks.testing.Test
-import org.gradle.jvm.application.tasks.CreateStartScripts
-import org.gradle.plugins.ide.eclipse.EclipsePlugin
-
-import com.google.common.io.Files
 
 /**
  * Configures a Java ros2 project.
@@ -62,17 +30,20 @@ class CommonConfiguration {
 
     protected RclJavaPluginExtension extension
 
-    public void configure(final Project project) {
+    /** True if ament as trigger the build, else is gradle. */
+    protected boolean isAmentBuild
+
+    void configure(final Project project) {
         this.loadDependenciesFromCache(project)
 
-        if (project.ament.buildSpace != null) {
-            project.buildDir = project.ament.buildSpace
+        if (this.isAmentBuild && project.ament.buildSpace != null) {
+            project.buildDir = new File(project.ament.buildSpace, 'gradle');
         }
 
         this.updateDependenciesCache(project)
     }
 
-    public void afterEvaluate(final Project project, RclJavaPluginExtension extension) {
+    void afterEvaluate(final Project project, RclJavaPluginExtension extension) {
         this.extension = extension
 
         //Set java properties
@@ -93,7 +64,7 @@ class CommonConfiguration {
         }
     }
 
-    public void updateDependenciesCache(Project project) {
+    void updateDependenciesCache(Project project) {
         if (project.ament.dependencies != null
                 && project.ament.buildSpace != null
                 && project.ament.installSpace != null) {
@@ -131,13 +102,14 @@ class CommonConfiguration {
         }
     }
 
-    public void loadDependenciesFromCache(Project project) {
+    void loadDependenciesFromCache(Project project) {
         if (project.ament.dependencies == null
                 || project.ament.buildSpace == null
                 || project.ament.installSpace == null
                 || project.ament.androidStl == null
                 || project.ament.androidAbi == null
                 || project.ament.androidNdk == null) {
+
             def propertiesFile = new File(project.projectDir, ".ament_dependencies.properties")
 
             if (propertiesFile.exists()) {
@@ -159,6 +131,8 @@ class CommonConfiguration {
                     }
                 }
             }
+        } else {
+            this.isAmentBuild = true
         }
     }
 }

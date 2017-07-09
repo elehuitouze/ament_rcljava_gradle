@@ -15,9 +15,9 @@
 package org.ros2.rcljava;
 
 class NodeScript {
-    def String mainClassName = null
-    def String applicationName = null
-    def String name = null
+    String mainClassName = null
+    String applicationName = null
+    String name = null
 
     NodeScript(String name) {
         this.name = name

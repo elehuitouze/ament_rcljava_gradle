@@ -12,28 +12,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.ros2.rcljava;
+package org.ros2.rcljava
 
-import java.io.File
-import java.util.HashMap
-import java.util.Map
-import org.gradle.api.file.FileTree
 import org.gradle.api.Project
+import org.gradle.api.file.FileTree
 
 class RclJavaPluginExtension {
     protected Project project
-    
-    def String dependencies = null
-    def String buildSpace = null
-    def String installSpace = null
-    
-    def String androidAbi = null
-    def String androidNdk = null
-    def String androidStl = null
 
-    def boolean generateEclipse = false
-    
-    public FileTree[] getNativeDependencies() {
+    String dependencies = null
+    String buildSpace = null
+    String installSpace = null
+
+    String androidAbi = null
+    String androidNdk = null
+    String androidStl = null
+
+    boolean generateEclipse = false
+
+    FileTree[] getNativeDependencies() {
         def result = []
         
         if (this.dependencies != null) {
