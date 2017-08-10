@@ -203,7 +203,7 @@ class JavaConfiguration extends CommonConfiguration {
                     from project.file("$project.buildDir/libs/")
                 }
 
-                into("bin") {
+                into("lib" + File.separator + project.name) {
                     from project.file("$project.buildDir/scripts/")
                 }
             }
