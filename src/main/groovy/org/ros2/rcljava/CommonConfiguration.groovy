@@ -26,7 +26,7 @@ import org.gradle.api.Project
  *
  * @author Erwan Le Huitouze <erwan.lehuitouze@gmail.com>
  */
-class CommonConfiguration {
+public abstract class CommonConfiguration {
 
     protected RclJavaPluginExtension extension
 

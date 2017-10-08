@@ -1,0 +1,3 @@
+plugins {
+    id "org.ros2.rcljava"
+}

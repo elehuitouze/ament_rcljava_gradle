@@ -66,9 +66,9 @@ class AndroidConfiguration extends CommonConfiguration {
         if (project.ament.dependencies != null) {
             project.plugins.withId(getAndroidPluginType(project)) {
                 project.dependencies {
-                    compile group: 'org.slf4j', name: 'slf4j-android', version: '1.7.7'
+                    implementation group: 'org.slf4j', name: 'slf4j-android', version: '1.7.7'
                 }
-                
+
                 def aarPath = null
 
                 project.ament.dependencies.split(':').each {
@@ -95,7 +95,7 @@ class AndroidConfiguration extends CommonConfiguration {
                         def extension = hasAar ? 'aar' : 'jar'
 
                         project.dependencies {
-                            compile(name: "$aarLibrary", version: '1.0.0', ext: extension) {
+                            implementation(name: "$aarLibrary", version: '1.0.0', ext: extension) {
                                 transitive = true
                             }
                         }
@@ -107,11 +107,11 @@ class AndroidConfiguration extends CommonConfiguration {
 
                         if (isAndroidLibrary(project)) {
                             project.dependencies {
-                                provided dependency
+                                compileOnly dependency
                             }
                         } else {
                             project.dependencies {
-                                compile dependency
+                                implementation dependency
                             }
                         }
                     }
@@ -127,17 +127,17 @@ class AndroidConfiguration extends CommonConfiguration {
                     //this seem not working, see https://code.google.com/p/android/issues/detail?id=214664
                     //project.android.defaultConfig.externalNativeBuild.cmake.arguments.add("-DANDROID_STL=$project.ament.androidStl")
                 }
-                
+
                 if (project.ament.androidAbi != null) {
                     def nativeLibsDestination = [project.ament.buildSpace, 'jniLibs', project.ament.androidAbi].join(File.separator)
 
                     project.task('cleanNativeLibs', type: Delete) {
                         delete nativeLibsDestination
                     }
-                    
+
                     project.task('copyNativeLibs', type: Copy) {
                         into nativeLibsDestination
-                        
+
                         project.ament.getNativeDependencies().each {
                             from it
                         }
@@ -145,16 +145,16 @@ class AndroidConfiguration extends CommonConfiguration {
 
                     project.copyNativeLibs.dependsOn project.cleanNativeLibs
                     project.preBuild.dependsOn project.copyNativeLibs
-                
+
                     if (project.ament.androidNdk != null && project.ament.androidStl != null) {
                         def stl = [project.ament.androidNdk, 'sources', 'cxx-stl', 'gnu-libstdc++', '4.9',
                                     'libs', project.ament.androidAbi, 'lib' + project.ament.androidStl + '.so'].join(File.separator)
-                        
+
                         project.task('copyStlLib', type: Copy) {
                             into nativeLibsDestination
                             from stl
                         }
-                        
+
                         project.copyNativeLibs.dependsOn project.copyStlLib
                     }
                 }
@@ -212,7 +212,7 @@ class AndroidConfiguration extends CommonConfiguration {
             }
         }
     }
-    
+
     private static String getAndroidPluginType(Project project) {
         def type = "com.android.application"
 

@@ -12,15 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.ros2.java;
+package org.ros2.rcljava;
 
 import org.junit.Test;
-
+import org.kt3k.gradle.plugin.CoverallsPlugin;
 import org.gradle.testfixtures.ProjectBuilder;
+import org.gradle.testing.jacoco.plugins.JacocoPlugin;
 import org.gradle.api.Project;
+import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.plugins.ide.eclipse.EclipsePlugin;
+
 import static org.junit.Assert.*;
 
 public class RclJavaPluginTest {
+
     @Test
     public void add_task_to_project() {
         boolean pluginIsApply = false;
@@ -44,7 +49,8 @@ public class RclJavaPluginTest {
         Project project = ProjectBuilder.builder().build();
         project.getPlugins().apply("org.ros2.rcljava");
 
-        assertNotNull("Java plugin is not apply", project.getPlugins().getPlugin("java"));
+        assertTrue("Java plugin is not apply", project.getPlugins().hasPlugin(JavaPlugin.class));
+        assertFalse("Eclipse plugin is apply", project.getPlugins().hasPlugin(EclipsePlugin.class));
     }
 
     @Test
@@ -52,6 +58,16 @@ public class RclJavaPluginTest {
         Project project = ProjectBuilder.builder().build();
         project.getPlugins().apply("org.ros2.rcljava");
 
-        //assertNotNull("Eclipse plugin is not apply", project.getPlugins().getPlugin("eclipse"));
+        assertTrue("Java plugin is not apply", project.getPlugins().hasPlugin(JavaPlugin.class));
+//        assertTrue("Eclipse plugin is not apply", project.getPlugins().hasPlugin(EclipsePlugin.class));
+    }
+
+    @Test
+    public void check_apply_report_to_project() {
+        Project project = ProjectBuilder.builder().build();
+        project.getPlugins().apply("org.ros2.rcljava");
+
+        assertTrue("Jacoco plugin is not apply", project.getPlugins().hasPlugin(JacocoPlugin.class));
+        assertTrue("Coveralls plugin is not apply", project.getPlugins().hasPlugin(CoverallsPlugin.class));
     }
 }

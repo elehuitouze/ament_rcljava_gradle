@@ -84,13 +84,13 @@ class JavaConfiguration extends CommonConfiguration {
                     def jarLibrary = packagePath.name
 
                     project.dependencies {
-                        compile(name: "$jarLibrary", version: '1.0.0') {
+                        implementation(name: "$jarLibrary", version: '1.0.0') {
                             transitive = true
                         }
                     }
                 } else {
                     project.dependencies {
-                        compile project.fileTree(
+                        implementation project.fileTree(
                                 dir: new File(packagePath, 'java'),
                                 include: '*.jar')
                     }
