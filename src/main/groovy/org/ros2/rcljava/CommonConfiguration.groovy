@@ -14,8 +14,12 @@
  */
 package org.ros2.rcljava
 
+import com.google.common.base.Strings
+
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
+
+import org.ros2.rcljava.RclJavaPluginExtension as Extension
 
 /**
  * Configures a Java ros2 project.
@@ -28,10 +32,12 @@ import org.gradle.api.Project
  */
 public abstract class CommonConfiguration {
 
+    private static final String FILE_DEPENDANCY = ".ament_dependencies.properties"
+
     protected RclJavaPluginExtension extension
 
     /** True if ament as trigger the build, else is gradle. */
-    protected boolean isAmentBuild
+    protected boolean isAmentBuild = false
 
     void configure(final Project project) {
         this.loadDependenciesFromCache(project)
@@ -47,14 +53,14 @@ public abstract class CommonConfiguration {
         this.extension = extension
 
         //Set java properties
-        this.updateJavaProperties(project)
+        updateJavaProperties(project)
     }
 
     /**
      * Update java compule properties.
      * Update source and target compatibilty.
      **/
-    protected void updateJavaProperties(Project project) {
+    protected static void updateJavaProperties(Project project) {
         if (project.sourceCompatibility < JavaVersion.VERSION_1_6) {
             project.sourceCompatibility = JavaVersion.VERSION_1_6
         }
@@ -64,44 +70,42 @@ public abstract class CommonConfiguration {
         }
     }
 
-    void updateDependenciesCache(Project project) {
-        if (project.ament.dependencies != null
-                && project.ament.buildSpace != null
-                && project.ament.installSpace != null) {
+    static String EOL = System.getProperty("line.separator")
 
-            def separator = System.getProperty("line.separator")
-            def properties = new File(project.projectDir, ".ament_dependencies.properties")
-
-            properties.write('ament.build_space=')
-            properties.append(project.ament.buildSpace)
-            properties.append(separator)
-            properties.append('ament.install_space=')
-            properties.append(project.ament.installSpace)
-            properties.append(separator)
-            properties.append('ament.dependencies=')
-            properties.append(project.ament.dependencies)
-
-            if (project.ament.androidStl != null) {
-                properties.append(separator)
-                properties.append('ament.android_stl=')
-                properties.append(project.ament.androidStl)
-            }
-
-            if (project.ament.androidAbi != null) {
-                properties.append(separator)
-                properties.append('ament.android_abi=')
-                properties.append(project.ament.androidAbi)
-            }
-
-            if (project.ament.androidNdk != null) {
-                properties.append(separator)
-                properties.append('ament.android_ndk=')
-                properties.append(project.ament.androidNdk)
-                properties.append(separator)
-            }
+    private static void appendProperty(StringBuilder builder, String extension, String value) {
+        if (!Strings.isNullOrEmpty(extension) && !Strings.isNullOrEmpty(value)) {
+            builder.append(extension)
+            builder.append('=')
+            builder.append(value)
+            builder.append(EOL)
         }
     }
 
+    /**
+     *
+     * @param project
+     */
+    void updateDependenciesCache(Project project) {
+        RclJavaPluginExtension extension = project.ament
+
+        if (extension.isConfigure()) {
+            StringBuilder builder = new StringBuilder()
+            appendProperty(builder, Extension.PROPERTY_AMENT_BUILDSPACE,   extension.buildSpace)
+            appendProperty(builder, Extension.PROPERTY_AMENT_INSTALLSPACE, extension.installSpace)
+            appendProperty(builder, Extension.PROPERTY_AMENT_DEPENDENCIES, extension.dependencies)
+            appendProperty(builder, Extension.PROPERTY_AMENT_ANDROIDSTL,   extension.androidStl)
+            appendProperty(builder, Extension.PROPERTY_AMENT_ANDROIDABI,   extension.androidAbi)
+            appendProperty(builder, Extension.PROPERTY_AMENT_ANDROIDNDK,   extension.androidNdk)
+
+            File propertiesFile = new File(project.projectDir, FILE_DEPENDANCY)
+            propertiesFile.write(builder.toString())
+        }
+    }
+
+    /**
+     *
+     * @param project
+     */
     void loadDependenciesFromCache(Project project) {
         if (project.ament.dependencies == null
                 || project.ament.buildSpace == null
@@ -110,23 +114,27 @@ public abstract class CommonConfiguration {
                 || project.ament.androidAbi == null
                 || project.ament.androidNdk == null) {
 
-            def propertiesFile = new File(project.projectDir, ".ament_dependencies.properties")
-
+            File propertiesFile = new File(project.projectDir, FILE_DEPENDANCY)
             if (propertiesFile.exists()) {
                 Properties props = new Properties()
                 props.load(new FileInputStream(propertiesFile))
                 props.each { prop ->
-                    if (prop.key == 'ament.build_space') {
+                    if (prop.key == Extension.PROPERTY_AMENT_BUILDSPACE) {
                         project.ament.buildSpace = prop.value
-                    } else if (prop.key == 'ament.dependencies') {
+                    } else
+                    if (prop.key == Extension.PROPERTY_AMENT_DEPENDENCIES) {
                         project.ament.dependencies = prop.value
-                    } else if (prop.key == 'ament.install_space') {
+                    } else
+                    if (prop.key == Extension.PROPERTY_AMENT_INSTALLSPACE) {
                         project.ament.installSpace = prop.value
-                    } else if (prop.key == 'ament.android_stl') {
+                    } else
+                    if (prop.key == Extension.PROPERTY_AMENT_ANDROIDSTL) {
                         project.ament.androidStl = prop.value
-                    } else if (prop.key == 'ament.android_abi') {
+                    } else
+                    if (prop.key == Extension.PROPERTY_AMENT_ANDROIDABI) {
                         project.ament.androidAbi = prop.value
-                    } else if (prop.key == 'ament.android_ndk') {
+                    } else
+                    if (prop.key == Extension.PROPERTY_AMENT_ANDROIDNDK) {
                         project.ament.androidNdk = prop.value
                     }
                 }

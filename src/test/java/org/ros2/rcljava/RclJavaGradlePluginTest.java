@@ -24,7 +24,7 @@ import org.gradle.plugins.ide.eclipse.EclipsePlugin;
 
 import static org.junit.Assert.*;
 
-public class RclJavaPluginTest {
+public class RclJavaGradlePluginTest {
 
     @Test
     public void add_task_to_project() {
